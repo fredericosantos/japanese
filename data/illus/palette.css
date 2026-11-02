@@ -1,0 +1,40 @@
+/* Illustration palette — soft picture-book tones. The kana strokes are drawn in --ink on top/between. */
+:root{
+ --ink:#1f2430; --paper:#fbfaf7;
+ --red:#f2a7a0; --red-d:#d9534a;
+ --orange:#f7c58f; --orange-d:#e08a2e;
+ --yellow:#f6e08a; --yellow-d:#d4ab1f;
+ --green:#b7dca0; --green-d:#5f9e45;
+ --teal:#a5dccf; --teal-d:#2f9480;
+ --blue:#a9c8f0; --blue-d:#3f72c2;
+ --sky:#d4e8f7; --sky-d:#7fb0d9;
+ --purple:#cdb6ea; --purple-d:#7d55b8;
+ --pink:#f5bdd3; --pink-d:#d0628f;
+ --brown:#d6b895; --brown-d:#8a5f37;
+ --grey:#d9dbe0; --grey-d:#7c818c;
+ --skin:#f6d3b5; --skin-d:#c98e62;
+ --white:#ffffff;
+}
+.dark{
+ --ink:#eef0f4; --paper:#1b1e25;
+ --red:#6e3a37; --red-d:#f08a80;
+ --orange:#6e4b2a; --orange-d:#f3a85a;
+ --yellow:#635827; --yellow-d:#ecd060;
+ --green:#33523a; --green-d:#8fd07a;
+ --teal:#24524a; --teal-d:#6fd1bb;
+ --blue:#2c4268; --blue-d:#8fb5ef;
+ --sky:#25384a; --sky-d:#7fb3de;
+ --purple:#46365f; --purple-d:#b99bea;
+ --pink:#5e3347; --pink-d:#f09ac0;
+ --brown:#5a4430; --brown-d:#d6aa7c;
+ --grey:#3a3e47; --grey-d:#a4a9b4;
+ --skin:#6a5040; --skin-d:#e0aa80;
+ --white:#2a2e37;
+}
+/* fills */
+.f-red{fill:var(--red)}.f-orange{fill:var(--orange)}.f-yellow{fill:var(--yellow)}.f-green{fill:var(--green)}.f-teal{fill:var(--teal)}.f-blue{fill:var(--blue)}.f-sky{fill:var(--sky)}.f-purple{fill:var(--purple)}.f-pink{fill:var(--pink)}.f-brown{fill:var(--brown)}.f-grey{fill:var(--grey)}.f-skin{fill:var(--skin)}.f-white{fill:var(--white)}.f-ink{fill:var(--ink)}.f-none{fill:none}
+.f-red-d{fill:var(--red-d)}.f-orange-d{fill:var(--orange-d)}.f-yellow-d{fill:var(--yellow-d)}.f-green-d{fill:var(--green-d)}.f-teal-d{fill:var(--teal-d)}.f-blue-d{fill:var(--blue-d)}.f-sky-d{fill:var(--sky-d)}.f-purple-d{fill:var(--purple-d)}.f-pink-d{fill:var(--pink-d)}.f-brown-d{fill:var(--brown-d)}.f-grey-d{fill:var(--grey-d)}.f-skin-d{fill:var(--skin-d)}
+/* strokes (outline colour) */
+.s-red{stroke:var(--red-d)}.s-orange{stroke:var(--orange-d)}.s-yellow{stroke:var(--yellow-d)}.s-green{stroke:var(--green-d)}.s-teal{stroke:var(--teal-d)}.s-blue{stroke:var(--blue-d)}.s-sky{stroke:var(--sky-d)}.s-purple{stroke:var(--purple-d)}.s-pink{stroke:var(--pink-d)}.s-brown{stroke:var(--brown-d)}.s-grey{stroke:var(--grey-d)}.s-skin{stroke:var(--skin-d)}.s-ink{stroke:var(--ink)}
+.pic .back *, .pic .front *{stroke-linecap:round;stroke-linejoin:round}
+.pic .kana path{fill:none;stroke:var(--ink);stroke-width:5.5;stroke-linecap:round;stroke-linejoin:round}

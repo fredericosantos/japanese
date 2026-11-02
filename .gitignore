@@ -1,0 +1,6 @@
+dist/
+dist-pwa/
+dist-offline/
+tools/voicevox/
+__pycache__/
+.DS_Store
