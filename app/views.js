@@ -1,8 +1,8 @@
 /* ============ shell & navigation ============ */
 const TABS = [['today', 'Today', 'today'], ['learn', 'Learn', 'learn'], ['chart', 'Chart', 'chart'], ['words', 'Words', 'words'], ['more', 'More', 'more']];
 let route = 'today', sub = null;
-const VALID = new Set(['today', 'learn', 'chart', 'words', 'more', 'sounds', 'lookalikes', 'settings', 'about']);
-try { const hsh = location.hash.slice(1); if (VALID.has(hsh)) { if (['sounds', 'lookalikes', 'settings', 'about'].includes(hsh)) { route = 'more'; sub = hsh; } else route = hsh; } } catch (e) { }
+const VALID = new Set(['today', 'learn', 'chart', 'words', 'more', 'sounds', 'lookalikes', 'practice', 'settings', 'about']);
+try { const hsh = location.hash.slice(1); if (VALID.has(hsh)) { if (['sounds', 'lookalikes', 'practice', 'settings', 'about'].includes(hsh)) { route = 'more'; sub = hsh; } else route = hsh; } } catch (e) { }
 try { const r = sessionStorage.getItem('lingoa-route'); if (r && !location.hash) { const [a, b] = r.split('/'); if (VALID.has(a)) { route = a; sub = b || null; } } } catch (e) { }
 
 function go(r, s = null) { route = r; sub = s; try { sessionStorage.setItem('lingoa-route', r + (s ? '/' + s : '')); } catch (e) { } render(); window.scrollTo(0, 0); }
@@ -202,12 +202,14 @@ function vWords() {
 function vMore() {
   if (sub === 'sounds') return vSounds();
   if (sub === 'lookalikes') return vLookalikes();
+  if (sub === 'practice') return vPractice();
   if (sub === 'settings') return vSettings();
   if (sub === 'about') return vAbout();
   const row = (s, t, d, k) => h('button', { class: 'lesson-row', onclick: () => go('more', s) }, h('span', { class: 'lk jp' }, k), h('span', null, h('div', { class: 'lt' }, t), h('div', { class: 'ld' }, d)), icon('next'));
   return h('div', { class: 'stack' }, h('h1', { style: { fontSize: '1.7rem' } }, 'More'),
     h('div', { class: 'track' },
       row('sounds', 'The sounds of Japanese', 'Vowels, beats, long vowels, pitch, the r', 'あ・い'),
+      row('practice', 'Practice', 'Quick quiz on any kana. Match hiragana to katakana', 'あ→ア'),
       row('lookalikes', 'Look-alikes', 'Drills for シ/ツ, ソ/ン, ぬ/め and friends', 'シツ'),
       row('settings', 'Settings', 'Daily goal, voices, answers, backup', '設定'),
       row('about', 'How this app teaches', 'The research behind it, and credits', '学')));
@@ -230,6 +232,25 @@ function vSounds() {
   }
   wrap.append(h('button', { class: 'btn primary lg', onclick: () => { S.flags.sounds = S.flags.sounds || Date.now(); save(); go('today'); toast('Nice. On to the first lesson!'); } }, S.flags.sounds ? 'Back to Today' : "I've listened. Start learning"));
   return wrap;
+}
+const PR = { mode: 'type', script: 'both', cats: new Set(['base', 'dakuten', 'yoon']), rows: new Set(), learned: false };
+function vPractice() {
+  const wrap = h('div', { class: 'stack' }); const draw = () => {
+    wrap.innerHTML = ''; wrap.append(backBar('Practice'), h('p', { class: 'muted' }, 'Free practice. It never changes your reviews or progress, so quiz yourself as often as you like.'));
+    const seg = (label, key, opts) => h('div', { class: 'stack', style: { gap: '6px' } }, h('div', { class: 'eyebrow' }, label), h('div', { class: 'seg', role: 'group', 'aria-label': label, style: { alignSelf: 'flex-start', flexWrap: 'wrap' } },
+      opts.map(([v, t]) => h('button', { 'aria-pressed': String(PR[key] === v), onclick: () => { PR[key] = v; if (key === 'mode' && v === 'pair') PR.cats.delete('ext'); draw(); } }, t))));
+    const toggle = (set, v, t) => h('button', { class: 'chip toggle', 'aria-pressed': String(set.has(v)), onclick: () => { set.has(v) ? set.delete(v) : set.add(v); draw(); } }, t);
+    const pair = PR.mode === 'pair';
+    wrap.append(seg('Quiz', 'mode', [['type', 'Type the sound'], ['pair', 'Hiragana ↔ Katakana']]));
+    if (!pair) wrap.append(seg('Script', 'script', [['h', 'Hiragana'], ['k', 'Katakana'], ['both', 'Both']]));
+    wrap.append(h('div', { class: 'stack', style: { gap: '6px' } }, h('div', { class: 'eyebrow' }, 'Which kana'), h('div', { class: 'row', style: { flexWrap: 'wrap' } },
+      toggle(PR.cats, 'base', 'Basic'), toggle(PR.cats, 'dakuten', 'Dakuten が ぱ'), toggle(PR.cats, 'yoon', 'Combinations きゃ'), !pair && PR.script !== 'h' ? toggle(PR.cats, 'ext', 'Foreign sounds ファ') : null)));
+    if (PR.cats.has('base')) wrap.append(h('details', { class: 'own' }, h('summary', null, PR.rows.size ? PR.rows.size + ' rows picked' : 'Pick rows (all by default)'),
+      h('div', { class: 'row', style: { flexWrap: 'wrap', marginTop: '8px' } }, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => toggle(PR.rows, n, C.items.find(i => i.s === 'h' && i.g === 'base' && +i.L.slice(1) === n).c + ' row')))));
+    wrap.append(h('label', { class: 'row', style: { gap: '10px' } }, h('input', { type: 'checkbox', checked: PR.learned, onchange: e => { PR.learned = e.target.checked; draw(); } }), h('span', null, 'Only kana I have learned in this app')));
+    const n = practicePool(PR).length, min = pair ? 4 : 2;
+    wrap.append(h('button', { class: 'btn primary lg', disabled: n < min, onclick: () => startPractice(PR) }, n < min ? 'Pick more kana' : 'Start · ' + n + ' kana'));
+  }; draw(); return wrap;
 }
 function vLookalikes() {
   const wrap = h('div', { class: 'stack' }, backBar('Look-alikes'));

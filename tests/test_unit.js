@@ -20,3 +20,8 @@ a.cards['x|r']={lr:100,r:1,d:1}; b.cards['x|r']={lr:200,r:2,d:2}; b.cards['y|r']
 let m=ctx.mergeState(a,b); console.log('merge', m.cards['x|r'].lr===200, !!m.cards['y|r'], m.intro.x===5);
 const c=ctx.freshState(); c.resetAt=150; c.cards['z|r']={lr:160,r:1,d:1}; m=ctx.mergeState(a,c); console.log('reset', !m.cards['x|r'], !!m.cards['z|r'], m.resetAt===150);
 m=ctx.mergeState(c,b); console.log('reset2', m.cards['x|r'] && m.cards['x|r'].lr===200, !m.cards['y|r']);
+
+// practice: every non-extended hiragana has a katakana twin with the same reading and group (and vice versa)
+const I=ctx.window.__C.items, key=i=>i.s+i.a+i.g; const keys=new Set(I.map(key)); let tw=0;
+for (const i of I) if (i.g!=='ext' && !keys.has((i.s==='h'?'k':'h')+i.a+i.g)) { tw++; console.log('no twin',i.c); }
+console.log('twin tests fail',tw);
