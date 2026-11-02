@@ -38,7 +38,7 @@ async def answer_quiz(pg, maxn=200, shot=None, wrong_first=False):
                 for j in range(cnt):
                     if (await btns.nth(j).inner_text()).strip()==w['r']: await btns.nth(j).click(); break
         elif 'mean' in lab:
-            await pg.wait_for_timeout(400); key=await pg.evaluate('window.__lastKey'); w=WA[key]
+            await pg.locator('.playbig').click(); await pg.wait_for_timeout(400); key=await pg.evaluate('window.__lastKey'); w=WA[key]
             btns=pg.locator('.choices .choice'); cnt=await btns.count()
             for j in range(cnt):
                 if (await btns.nth(j).inner_text()).strip()==w['en']: await btns.nth(j).click(); break
@@ -50,7 +50,7 @@ async def answer_quiz(pg, maxn=200, shot=None, wrong_first=False):
                 if BYC[t]['r']==r: await btns.nth(j).click(); clicked=True; break
             if not clicked: print('drill: no match',r)
         else:
-            await pg.wait_for_timeout(400); key=await pg.evaluate('window.__lastKey'); a=key.split(':',1)[1]
+            await pg.locator('.playbig').click(); await pg.wait_for_timeout(400); key=await pg.evaluate('window.__lastKey'); a=key.split(':',1)[1]
             chars={i['c'] for i in BYA[a]}
             btns=pg.locator('.choices .choice'); cnt=await btns.count()
             for j in range(cnt):

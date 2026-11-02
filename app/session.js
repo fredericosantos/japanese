@@ -231,7 +231,7 @@ function qKanaListen(ov, it, resolve, nextQ, o) {
   } }, x.c)));
   area.append(grid);
   ov.set(h('div', { class: 'q-prompt' }, h('div', { class: 'q-label' }, 'Which kana do you hear?'), pb, area), [h('button', { class: 'btn', onclick: () => pb.click() }, icon('replay'), 'Hear again')]);
-  setTimeout(() => playItem(it), 250);
+  if (S.settings.autoplay) setTimeout(() => playItem(it), 250);
 }
 function qDrill(ov, it, pool, resolve, nextQ) {
   const group = (pool || []).map(c => BYCHAR.get(c)).filter(x => x && x.s === it.s && isIntro(x.id) && x.id !== it.id);
@@ -258,7 +258,7 @@ function qWordRead(ov, w, resolve, nextQ) {
   const body = h('div', { class: 'q-prompt' }, h('div', { class: 'q-label' }, 'Read this word'), h('div', { class: 'genko wide' }, h('span', { class: 'glyph word', lang: 'ja' }, w.k)), area);
   const after = res => {
     const { correct } = resolve(res);
-    playWord(w);
+    if (S.settings.autoplay) playWord(w);
     const fb = h('div', { class: 'feedback ' + (res === 'ok' ? 'ok' : res === 'long' ? 'meh' : 'bad') },
       verdict(res === 'no' ? 'bad' : 'ok', res === 'ok' ? 'Correct' : res === 'long' ? 'Almost: watch the long vowels and small っ' : 'Not quite'),
       h('div', { class: 'reveal' }, h('span', { class: 'r' }, w.r), h('span', null, w.en), h('button', { class: 'iconbtn', 'aria-label': 'Play', onclick: () => playWord(w) }, icon('play'))),
@@ -295,7 +295,7 @@ function qWordListen(ov, w, resolve, nextQ) {
   } }, x.en)));
   area.append(grid);
   ov.set(h('div', { class: 'q-prompt' }, h('div', { class: 'q-label' }, 'What does it mean?'), pb, area), [h('button', { class: 'btn', onclick: () => pb.click() }, icon('replay'), 'Hear again')]);
-  setTimeout(() => playWord(w), 250);
+  if (S.settings.autoplay) setTimeout(() => playWord(w), 250);
 }
 
 /* ============ flows ============ */
@@ -352,7 +352,7 @@ function startWordLesson() {
     if (i < ws.length) {
       const w = ws[i];
       ov.set(wordMeet(w), [i > 0 ? h('button', { class: 'btn', onclick: () => { i--; step(); } }, icon('back'), 'Back') : null, h('button', { class: 'btn primary lg', onclick: () => { i++; step(); } }, i === ws.length - 1 ? 'Test yourself' : 'Next')]);
-      setTimeout(() => playWord(w), 200); return;
+      if (S.settings.autoplay) setTimeout(() => playWord(w), 200); return;
     }
     closeOverlay();
     runQuiz({ title: 'New words', cids: ws.flatMap(w => cardIds(w.id)), mode: 'words', onDone: res => {
@@ -459,7 +459,7 @@ function practiceType(its, o) {
     if (e.key !== 'Enter' || res.has(c.it.id)) return; e.preventDefault();
     const v = c.inp.value.trim(), ok = !!v && c.it.alt.map(normRomaji).includes(normRomaji(v));
     res.set(c.it.id, { it: c.it, ok, typed: ok ? '' : v }); c.inp.readOnly = true; c.el.classList.add(ok ? 'ok' : 'no');
-    c.out.append(c.it.r); if (!ok) { if (v) c.out.append(' ', h('s', null, v)); playItem(c.it); }
+    c.out.append(c.it.r); if (!ok) { if (v) c.out.append(' ', h('s', null, v)); if (S.settings.autoplay) playItem(c.it); }
     sync(); const n = cards.slice(i + 1).concat(cards.slice(0, i)).find(x => !res.has(x.it.id)); if (n) n.inp.focus(); else c.inp.blur();
   }));
   finish.onclick = () => practiceDone(ov, o, { rows: [...res.values()], total: cards.length, ms: Date.now() - t0 });
@@ -478,7 +478,7 @@ function practicePair(its, o) {
     const grid = h('div', { class: 'choices', style: { gridTemplateColumns: 'repeat(2,minmax(0,1fr))' } }, opts.map(x => h('button', { class: 'choice', lang: 'ja', onclick: e => {
       grid.querySelectorAll('button').forEach(b => b.disabled = true); const ok = x.id === ans.id;
       e.currentTarget.classList.add(ok ? 'right' : 'wrong'); if (!ok) grid.children[opts.indexOf(ans)].classList.add('right');
-      rows.push({ it: p, ok, typed: ok ? '' : x.c }); playItem(ans);
+      rows.push({ it: p, ok, typed: ok ? '' : x.c }); if (S.settings.autoplay) playItem(ans);
       area.append(h('div', { class: 'feedback ' + (ok ? 'ok' : 'bad') }, verdict(ok ? 'ok' : 'bad', ok ? 'Correct' : 'Not quite'), h('div', { class: 'reveal' }, h('span', { class: 'k', lang: 'ja' }, p.c + ' = ' + ans.c), h('span', { class: 'r' }, p.r))));
       ov.foot.innerHTML = ''; ov.foot.append(ok ? autoNext(() => { i++; step(); }) : contBtn(() => { i++; step(); }));
     } }, x.c)));

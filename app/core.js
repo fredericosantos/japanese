@@ -57,7 +57,7 @@ const icon = (n, cls) => h('span', { class: 'ic ' + (cls || ''), 'aria-hidden': 
 
 /* ============ state ============ */
 const LS_KEY = 'lingoa-iapam-v1';
-const DEFAULT_SETTINGS = { newPerDay: 10, voice: 'alt', autoplay: true, answer: 'type' };
+const DEFAULT_SETTINGS = { newPerDay: 10, voice: 'alt', autoplay: false, answer: 'type' };
 function freshState() { return { v: 1, cards: {}, intro: {}, lessons: {}, days: {}, notes: {}, settings: { ...DEFAULT_SETTINGS }, settingsAt: 0, flags: {}, updatedAt: 0 }; }
 let S = freshState();
 try { const raw = localStorage.getItem(LS_KEY); if (raw) S = Object.assign(freshState(), JSON.parse(raw)); } catch (e) { }
