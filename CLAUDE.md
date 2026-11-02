@@ -77,11 +77,12 @@ Check readings with VOICEVOX's audio query: it shows the kana actually synthesis
 
 ```
 node tests/test_unit.js                 # romaji acceptance and merge/reset logic
-python3 tests/test_offline.py           # PWA offline reload, single-file version, backup-code round trip
-python3 tests/test_flow2.py             # full lesson/review/words/placement/drill walkthrough (Claude build + mock account)
+uv sync && uv run playwright install chromium   # once
+uv run python tests/test_offline.py     # PWA offline reload, single-file version, backup-code round trip
+uv run python tests/test_flow2.py       # full lesson/review/words/placement/drill walkthrough (Claude build + mock account)
 ```
 
-The Playwright tests expect local servers: `dist-pwa` on port 8766 and `dist` on port 8765 (`python3 -m http.server`).
+The Playwright tests expect local servers: `dist-pwa` on port 8766 and `dist` on port 8765 (`python3 -m http.server`). The build itself still needs only Python 3; uv is for the tests. `test_flow2.py` logs audio 404s for the `dist` (Claude artifact) build, which has no audio files; the walkthrough still completes.
 
 ## Style of the content
 
