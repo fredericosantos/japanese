@@ -416,6 +416,78 @@ function startPlacement() {
   step();
 }
 
+/* ============ practice (free practice, never touches saved progress) ============ */
+const TWIN = new Map(C.items.map(i => [i.s + i.a + i.g, i])); // hiragana <-> katakana counterpart, same reading
+const twin = it => TWIN.get((it.s === 'h' ? 'k' : 'h') + it.a + it.g);
+function practicePool(o) {
+  const rowOk = i => i.g !== 'base' || !o.rows.size || o.rows.has(+i.L.slice(1));
+  const pair = o.mode === 'pair';
+  return C.items.filter(i => o.cats.has(i.g) && rowOk(i) && (pair ? i.s === 'h' && i.g !== 'ext' : o.script === 'both' || i.s === o.script)
+    && (!o.learned || (isIntro(i.id) && (!pair || isIntro(twin(i).id)))));
+}
+function startPractice(o) {
+  const its = practicePool(o); if (its.length < (o.mode === 'pair' ? 4 : 2)) { toast('Pick more kana to practise'); return; }
+  (o.mode === 'pair' ? practicePair : practiceType)(its, o);
+}
+function practiceDone(ov, o, { rows, total, ms }) { // rows: [{it, ok, typed?}] for attempted cards
+  ov.setProgress(1);
+  const right = rows.filter(r => r.ok).length, miss = rows.filter(r => !r.ok), pct = rows.length ? Math.round(right / rows.length * 100) : 0;
+  const again = (its) => () => (o.mode === 'pair' ? practicePair : practiceType)(its, o);
+  ov.set(h('div', { class: 'done-hero' }, h('div', { class: 'hanko', 'aria-hidden': 'true' }, '済'), h('h2', { style: { fontSize: '1.6rem' } }, miss.length ? 'Practice done' : 'Perfect round'),
+    mdEl('p', total > rows.length ? `${total - rows.length} of ${total} left unanswered. Only answered cards are scored.` : 'Practice never changes your schedule.', 'muted'),
+    h('div', { class: 'stat-row', style: { width: '100%', maxWidth: '420px' } },
+      h('div', { class: 'stat' }, h('b', { class: 'tnum' }, rows.length + ''), h('span', null, 'answered')),
+      h('div', { class: 'stat' }, h('b', { class: 'tnum' }, pct + '%'), h('span', null, 'right')),
+      h('div', { class: 'stat' }, h('b', { class: 'tnum' }, (ms >= 90000 ? Math.round(ms / 60000) + 'm' : Math.round(ms / 1000) + 's')), h('span', null, 'time'))),
+    miss.length ? h('div', { class: 'stack', style: { width: '100%', maxWidth: '420px' } }, h('div', { class: 'eyebrow' }, 'To look at again'),
+      h('div', { class: 'pq-miss' }, miss.map(r => h('button', { class: 'pq-m', onclick: () => openItem(r.it) }, h('span', { class: 'jp', lang: 'ja' }, r.it.c), h('span', { class: 'small' }, r.it.r), r.typed ? h('span', { class: 'small muted' }, h('s', null, r.typed)) : null)))) : null),
+    [h('button', { class: 'btn', onclick: () => { closeOverlay(); go('more', 'practice'); } }, 'Setup'),
+      miss.length ? h('button', { class: 'btn', onclick: again(miss.map(r => r.it)) }, 'Retry ' + miss.length + ' missed') : null,
+      h('button', { class: 'btn primary', onclick: again(practicePool(o)) }, 'Again')]);
+}
+// Grid of cards: type the sound, Enter checks and moves on. A wrong card shows the answer and plays it.
+function practiceType(its, o) {
+  const ov = overlay('Practice'); const t0 = Date.now(); const res = new Map();
+  const cards = shuffle(its).map(it => {
+    const inp = h('input', { type: 'text', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false', enterkeyhint: 'next', 'aria-label': 'Romaji for ' + it.c });
+    const out = h('div', { class: 'pq-out' });
+    return { it, inp, out, el: h('div', { class: 'pq-card' }, h('div', { class: 'pq-k', lang: 'ja' }, it.c), inp, out) };
+  });
+  const finish = h('button', { class: 'btn primary lg', disabled: true });
+  const sync = () => { ov.setProgress(res.size / cards.length); finish.disabled = !res.size; finish.textContent = res.size + ' / ' + cards.length + ' · Finish'; };
+  cards.forEach((c, i) => c.inp.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || res.has(c.it.id)) return; e.preventDefault();
+    const v = c.inp.value.trim(), ok = !!v && c.it.alt.map(normRomaji).includes(normRomaji(v));
+    res.set(c.it.id, { it: c.it, ok, typed: ok ? '' : v }); c.inp.readOnly = true; c.el.classList.add(ok ? 'ok' : 'no');
+    c.out.append(c.it.r); if (!ok) { if (v) c.out.append(' ', h('s', null, v)); playItem(c.it); }
+    sync(); const n = cards.slice(i + 1).concat(cards.slice(0, i)).find(x => !res.has(x.it.id)); if (n) n.inp.focus(); else c.inp.blur();
+  }));
+  finish.onclick = () => practiceDone(ov, o, { rows: [...res.values()], total: cards.length, ms: Date.now() - t0 });
+  ov.set(h('div', { class: 'stack' }, h('p', { class: 'muted small' }, 'Type the sound of each kana and press Enter. Enter on an empty card reveals the answer and counts as a miss. Cards you leave alone are not scored.'), h('div', { class: 'pq-grid' }, cards.map(c => c.el))), [finish]);
+  sync(); setTimeout(() => cards[0].inp.focus({ preventScroll: true }), 50);
+}
+// One at a time: see a kana, pick its twin in the other script. Look-alikes are used as distractors.
+function practicePair(its, o) {
+  const ov = overlay('Hiragana ↔ Katakana'); const t0 = Date.now(); const rows = []; const qs = shuffle(its).map(it => Math.random() < .5 ? it : twin(it));
+  let i = 0;
+  const step = () => {
+    ov.setProgress(i / qs.length);
+    if (i >= qs.length) return practiceDone(ov, o, { rows, total: qs.length, ms: Date.now() - t0 });
+    const p = qs[i], ans = twin(p), script = ans.s === 'h' ? 'hiragana' : 'katakana';
+    const opts = shuffle([ans, ...distractorsKana(ans, 3, its.map(x => (x.s === ans.s ? x : twin(x)).id))]); const area = h('div', { class: 'stack', style: { width: '100%' } });
+    const grid = h('div', { class: 'choices', style: { gridTemplateColumns: 'repeat(2,minmax(0,1fr))' } }, opts.map(x => h('button', { class: 'choice', lang: 'ja', onclick: e => {
+      grid.querySelectorAll('button').forEach(b => b.disabled = true); const ok = x.id === ans.id;
+      e.currentTarget.classList.add(ok ? 'right' : 'wrong'); if (!ok) grid.children[opts.indexOf(ans)].classList.add('right');
+      rows.push({ it: p, ok, typed: ok ? '' : x.c }); playItem(ans);
+      area.append(h('div', { class: 'feedback ' + (ok ? 'ok' : 'bad') }, verdict(ok ? 'ok' : 'bad', ok ? 'Correct' : 'Not quite'), h('div', { class: 'reveal' }, h('span', { class: 'k', lang: 'ja' }, p.c + ' = ' + ans.c), h('span', { class: 'r' }, p.r))));
+      ov.foot.innerHTML = ''; ov.foot.append(ok ? autoNext(() => { i++; step(); }) : contBtn(() => { i++; step(); }));
+    } }, x.c)));
+    area.append(grid);
+    ov.set(h('div', { class: 'q-prompt' }, h('div', { class: 'q-label' }, 'Which ' + script + ' is this?'), h('div', { class: 'genko' + (p.c.length > 1 ? ' wide' : ''), style: p.c.length > 1 ? { width: 'min(80vw,320px)' } : null }, h('span', { class: 'glyph' + (p.c.length > 1 ? ' combo' : ''), lang: 'ja' }, p.c)), area), [h('button', { class: 'btn', onclick: () => { grid.querySelectorAll('button').forEach(b => b.disabled = true); rows.push({ it: p, ok: false, typed: '' }); grid.children[opts.indexOf(ans)].classList.add('right'); ov.foot.innerHTML = ''; ov.foot.append(contBtn(() => { i++; step(); })); } }, "I don't know")]);
+  };
+  step();
+}
+
 /* ============ boot ============ */
 render();
 initSync(fromRemote => { if (!OV) render(); else if (fromRemote) toast('Progress updated from another device'); });
